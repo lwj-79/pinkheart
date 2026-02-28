@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>跳动的心</title>
+
+<style>
+html, body { height: 100%; }
+body{
+  margin:0;
+  overflow:hidden;
+  background: radial-gradient(1200px 600px at 50% 30%,
+    #fff6f8 0%, #ffe5ee 30%, #ffd4df 58%, #f7b8c8 100%);
+}
+
+/* ====== 居中按钮层（如果你不要按钮可删这一块 + HTML的 .center） ====== */
+.center{
+  position:fixed;
+  inset:0;
+  display:grid;
+  place-items:center;
+  z-index:10;
+}
+.btn-heart{
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 66px;
+  height: 61px;
+  text-decoration: none;
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: .4px;
+  background: linear-gradient(135deg, #ff2f5f 0%, #ff4f79 28%, #ff7f9f 58%, #ff4a73 100%);
+  background-size: 220% 220%;
+  clip-path: polygon(
+    50% 100%,
+    42% 94%,
+    34% 87%,
+    27% 80%,
+    21% 73%,
+    15% 65%,
+    11% 57%,
+    8% 49%,
+    7% 40%,
+    9% 31%,
+    13% 24%,
+    19% 19%,
+    26% 15%,
+    34% 14%,
+    41% 16%,
+    47% 21%,
+    50% 27%,
+    53% 21%,
+    59% 16%,
+    66% 14%,
+    74% 15%,
+    81% 19%,
+    87% 24%,
+    91% 31%,
+    93% 40%,
+    92% 49%,
+    89% 57%,
+    85% 65%,
+    79% 73%,
+    73% 80%,
+    66% 87%,
+    58% 94%
+  );
+  box-shadow:
+    0 14px 28px rgba(224, 41, 110, .34),
+    0 0 0 2px rgba(255, 214, 228, .65) inset,
+    0 0 18px rgba(255, 114, 166, .30);
+  overflow: hidden;
+  isolation: isolate;
+  animation: heartBtnBeat 1.6s ease-in-out infinite, heartBtnFlow 4.8s ease-in-out infinite;
+}
+.btn-heart::before{
+  content: "";
+  position: absolute;
+  inset: -35% -70%;
+  background: linear-gradient(108deg,
+    rgba(255,255,255,0) 38%,
+    rgba(255,255,255,1) 48%,
+    rgba(255,255,255,0) 58%);
+  transform: translateX(-120%) rotate(12deg);
+  opacity: .55;
+  filter: blur(.12px);
+  animation: heartBtnShine 4.6s ease-in-out infinite;
+}
+.btn-heart::after{
+  content: none;
+}
+.btn-heart > span{
+  position: relative;
+  z-index: 1;
+  transform: translateY(5px);
+  display: block;
+  text-align: center;
+  line-height: 1.05;
+  font-size: 11px;
+  text-shadow: 0 1px 6px rgba(153, 11, 64, .45);
+}
+@keyframes heartBtnBeat{
+  0%,100%{ transform: scale(1); }
+  40%{ transform: scale(1.06); }
+  70%{ transform: scale(0.98); }
+}
+@keyframes heartBtnFlow{
+  0%{ background-position: 0% 50%; }
+  50%{ background-position: 100% 50%; }
+  100%{ background-position: 0% 50%; }
+}
+@keyframes heartBtnShine{
+  0%{ transform: translateX(-130%) rotate(12deg); opacity: 0; }
+  18%{ opacity: .32; }
+  75%{ transform: translateX(130%) rotate(12deg); opacity: .32; }
+  100%{ transform: translateX(130%) rotate(12deg); opacity: 0; }
+}
+
+/* ====== 摩天轮背景 ====== */
+.ferris-wrap{
+  position:fixed;
+  inset:0;
+  display:grid;
+  place-items:center;
+  z-index:2;           /* 在花瓣之下/之上可调，见 petals z-index */
+  pointer-events:none;
+  contain: layout paint;
+}
+.ferris{
+  position:relative;
+  width:min(460px, 76vmin);
+  height:min(460px, 76vmin);
+  opacity:.40;
+  filter: drop-shadow(0 18px 32px rgba(255,77,109,.14));
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* 轮子整体旋转（你要慢一点也可以改这里，如 28s/32s） */
+.wheel-rotor{
+  position:absolute;
+  inset:0;
+  animation: wheelSpin 18s linear infinite;
+}
+
+/* 三层轮圈 */
+.rim-outer{
+  position:absolute;
+  inset:5%;
+  border-radius:50%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(255,154,162,.95) 0 18deg,
+    rgba(255,255,255,.95) 18deg 36deg
+  );
+  -webkit-mask: radial-gradient(circle, transparent 0 86%, #000 87%);
+          mask: radial-gradient(circle, transparent 0 86%, #000 87%);
+  box-shadow:
+    inset 0 0 0 6px rgba(255,214,223,.65),
+    0 0 0 2px rgba(255,154,162,.28);
+}
+.rim-middle{
+  position:absolute;
+  inset:12%;
+  border-radius:50%;
+  border:2px solid rgba(255,154,162,.65);
+  box-shadow: inset 0 0 0 6px rgba(255,255,255,.45);
+}
+.rim-inner{
+  position:absolute;
+  inset:22%;
+  border-radius:50%;
+  border:4px solid rgba(255,179,193,.75);
+  box-shadow:
+    inset 0 0 18px rgba(255,255,255,.55),
+    0 0 18px rgba(255,179,193,.35);
+}
+
+/* 轮圈双道追光 */
+.rim-glow{
+  position:absolute;
+  inset:5%;
+  border-radius:50%;
+  -webkit-mask: radial-gradient(circle, transparent 0 86%, #000 87%);
+          mask: radial-gradient(circle, transparent 0 86%, #000 87%);
+  pointer-events:none;
+  mix-blend-mode: screen;
+  opacity:.9;
+}
+.rim-glow::before,
+.rim-glow::after{
+  content:"";
+  position:absolute;
+  inset:-2%;
+  border-radius:50%;
+  -webkit-mask: radial-gradient(circle, transparent 0 86%, #000 87%);
+          mask: radial-gradient(circle, transparent 0 86%, #000 87%);
+  background:
+    conic-gradient(from 0deg,
+      transparent 0 55deg,
+      rgba(255,255,255,0) 55deg 68deg,
+      rgba(255,255,255,.60) 68deg 78deg,
+      rgba(255,255,255,0) 78deg 95deg,
+      transparent 95deg 360deg
+    );
+  filter: blur(.2px);
+  animation: chase 2.2s ease-in-out infinite;
+}
+.rim-glow::after{
+  background:
+    conic-gradient(from 0deg,
+      transparent 0 120deg,
+      rgba(255,255,255,0) 120deg 130deg,
+      rgba(255,255,255,.45) 130deg 136deg,
+      rgba(255,255,255,0) 136deg 150deg,
+      transparent 150deg 360deg
+    );
+  animation: chase2 1.8s ease-in-out infinite;
+  opacity:.85;
+}
+@keyframes chase{
+  0%   { transform: rotate(0deg);   opacity:.40; }
+  35%  { transform: rotate(160deg); opacity:.95; }
+  70%  { transform: rotate(300deg); opacity:.70; }
+  100% { transform: rotate(360deg); opacity:.40; }
+}
+@keyframes chase2{
+  0%   { transform: rotate(40deg);  opacity:.25; }
+  30%  { transform: rotate(210deg); opacity:.85; }
+  65%  { transform: rotate(340deg); opacity:.60; }
+  100% { transform: rotate(400deg); opacity:.25; }
+}
+
+/* 外圈灯点 */
+.lights{
+  position:absolute;
+  inset:6%;
+  border-radius:50%;
+}
+.lights i{
+  position:absolute;
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background: rgba(255,255,255,.92);
+  box-shadow: 0 0 16px rgba(255,255,255,.72);
+  transform: translate(-50%,-50%);
+  opacity:.92;
+  animation: twinkle 2.6s ease-in-out infinite;
+}
+.lights i:nth-child(3n){ animation-delay: .4s; }
+.lights i:nth-child(4n){ animation-delay: .9s; }
+@keyframes twinkle{
+  0%,100%{ transform: translate(-50%,-50%) scale(1); opacity:.85; }
+  50%{ transform: translate(-50%,-50%) scale(1.25); opacity:1; }
+}
+
+/* 辐条 */
+.spokes{
+  position:absolute;
+  inset:0;
+}
+.spokes span{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:2px;
+  height:39%;
+  background: rgba(255,154,162,.55);
+  transform-origin: bottom center;
+  border-radius:2px;
+}
+.spokes span::after{
+  content:"";
+  position:absolute;
+  top:10%;
+  left:-6px;
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  border:2px solid rgba(255,255,255,.65);
+  box-shadow: 0 0 0 6px rgba(255,214,223,.35);
+  opacity:.75;
+}
+
+/* 中心轴 */
+.hub{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:18px;
+  height:18px;
+  transform: translate(-50%,-50%);
+  border-radius:50%;
+  background: rgba(255,154,162,.95);
+  box-shadow:
+    0 0 0 10px rgba(255,255,255,.55),
+    0 0 0 18px rgba(255,214,223,.35);
+}
+
+/* 座舱保持竖直 */
+.cabins{
+  position:absolute;
+  inset:0;
+  animation: counterSpin 18s linear infinite;
+}
+.cabin{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:42px;
+  height:58px;
+  transform: translate(-50%,-50%);
+  animation: cabinGlow 3.2s ease-in-out infinite;
+  --lampA: rgba(255,255,255,.95);
+  --lampB: rgba(255,179,193,.95);
+  --lampC: rgba(176,238,225,.95);
+}
+.cabin:nth-child(3n){ animation-delay:.35s; }
+.cabin:nth-child(4n){ animation-delay:.8s; }
+.cabin:nth-child(5n){ animation-delay:.55s; }
+@keyframes cabinGlow{
+  0%,100%{ filter: drop-shadow(0 0 0 rgba(255,255,255,0)); }
+  50%{ filter: drop-shadow(0 0 10px rgba(255,255,255,.55)); }
+}
+
+
+
+/* 支架 */
+.support{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:110%;
+  height:110%;
+  transform: translate(-50%,-50%);
+}
+.leg{
+  position:absolute;
+  bottom:-6%;
+  width:10px;
+  height:34%;
+  background: rgba(255,154,162,.48);
+  border-radius:12px;
+  transform-origin: bottom center;
+}
+.leg.left{ left:34%; transform: rotate(12deg); }
+.leg.right{ right:34%; transform: rotate(-12deg); }
+.base{
+  position:absolute;
+  left:50%;
+  bottom:-8%;
+  width:42%;
+  height:12px;
+  transform: translateX(-50%);
+  border-radius:999px;
+  background: rgba(255,214,223,.72);
+  box-shadow: 0 10px 20px rgba(255,77,109,.10);
+}
+.crossbar{
+  position:absolute;
+  left:50%;
+  bottom:10%;
+  width:34%;
+  height:6px;
+  transform: translateX(-50%);
+  border-radius:999px;
+  background: rgba(255,255,255,.70);
+}
+
+/* 动画 */
+@keyframes wheelSpin{
+  from{ transform: rotate(0deg); }
+  to{ transform: rotate(360deg); }
+}
+@keyframes counterSpin{
+  from{ transform: rotate(0deg); }
+  to{ transform: rotate(-360deg); }
+}
+
+/* ====== 背景烟花圈（新增） ====== */
+.fireworks-ring{
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4; /* 在摩天轮上面、按钮下面 */
+  contain: layout paint;
+}
+.fw{
+  position:absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0%, rgba(255,255,255,0.2) 60%, rgba(255,255,255,0) 70%);
+  filter: drop-shadow(0 0 10px rgba(255,255,255,0.55));
+}
+@keyframes explode{
+  0%   { transform: scale(0.5); opacity: 0; }
+  18%  { transform: scale(0.9); opacity: 1; }
+  60%  { transform: scale(1.6); opacity: 0.85; }
+  100% { transform: scale(2.0); opacity: 0; }
+}
+
+/* ====== 花瓣飘落（新增，引用你的逻辑） ====== */
+.petals{
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 3; /* 在摩天轮之上、烟花之下（你想花瓣更前面就调到 5） */
+  contain: layout paint;
+}
+.petal{
+  position:absolute;
+  top:0;
+  left:0;
+  width: calc(12px * var(--size, 1));
+  height: calc(18px * var(--size, 1));
+  opacity:0;
+  filter: blur(var(--blur, 0.6px)) drop-shadow(0 2px 2px rgba(0,0,0,0.25));
+  will-change: transform, opacity;
+}
+.petal svg{ width:100%; height:100%; display:block; }
+
+/* 落地玫瑰 */
+.roses{
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 3;
+}
+.rose{
+  position: absolute;
+  width: 58px;
+  height: 58px;
+  --rose-rot: 0deg;
+  transform: translate(-50%, -50%) scale(0.2) rotate(var(--rose-rot));
+  opacity: 0;
+  background: center / contain no-repeat url("images/rose.png");
+  mix-blend-mode: multiply;
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 54%, rgba(0,0,0,0.96) 72%, transparent 88%);
+          mask-image: radial-gradient(circle at 50% 50%, #000 54%, rgba(0,0,0,0.96) 72%, transparent 88%);
+  box-shadow: 0 4px 10px rgba(118, 0, 20, 0.12);
+  filter: saturate(1.06) contrast(1.02) brightness(1.01);
+  animation: roseBloom 850ms cubic-bezier(.22,.85,.22,1) forwards;
+}
+.rose.leave{
+  animation: roseFadeOut 760ms cubic-bezier(.42,0,.58,1) forwards;
+}
+.rose::before,
+.rose::after{
+  content: none;
+}
+@keyframes roseBloom{
+  0%{
+    transform: translate(-50%, -50%) scale(0.2) rotate(calc(var(--rose-rot) - 10deg));
+    opacity: 0;
+    filter: blur(1.6px) saturate(0.92) contrast(0.98);
+  }
+  65%{
+    transform: translate(-50%, -50%) scale(1.08) rotate(calc(var(--rose-rot) + 4deg));
+    opacity: 0.74;
+    filter: blur(0.2px) saturate(1.1) contrast(1.02);
+  }
+  100%{
+    transform: translate(-50%, -50%) scale(1) rotate(var(--rose-rot));
+    opacity: 0.66;
+    filter: blur(0.55px) saturate(1.05) contrast(1.01);
+  }
+}
+@keyframes roseFadeOut{
+  0%{
+    transform: translate(-50%, -50%) scale(1) rotate(var(--rose-rot));
+    opacity: 0.66;
+    filter: blur(0.55px) saturate(1.05) contrast(1.01);
+  }
+  100%{
+    transform: translate(-50%, -50%) scale(0.24) rotate(calc(var(--rose-rot) - 12deg));
+    opacity: 0;
+    filter: blur(2.1px) saturate(0.9) contrast(0.96);
+  }
+}
+
+/* 音频隐藏 */
+.audio{ display:none; }
+</style>
+</head>
+
+<body>
+
+<!-- 摩天轮 -->
+<div class="ferris-wrap" aria-hidden="true">
+  <div class="ferris">
+
+    <div class="support">
+      <div class="leg left"></div>
+      <div class="leg right"></div>
+      <div class="crossbar"></div>
+      <div class="base"></div>
+    </div>
+
+    <div class="wheel-rotor">
+      <div class="rim-outer"></div>
+      <div class="rim-glow"></div>
+      <div class="rim-middle"></div>
+      <div class="rim-inner"></div>
+
+      <div class="lights">
+        <i style="left:50%; top:0%"></i>
+        <i style="left:75%; top:7%"></i>
+        <i style="left:93%; top:25%"></i>
+        <i style="left:100%; top:50%"></i>
+        <i style="left:93%; top:75%"></i>
+        <i style="left:75%; top:93%"></i>
+        <i style="left:50%; top:100%"></i>
+        <i style="left:25%; top:93%"></i>
+        <i style="left:7%; top:75%"></i>
+        <i style="left:0%; top:50%"></i>
+        <i style="left:7%; top:25%"></i>
+        <i style="left:25%; top:7%"></i>
+      </div>
+
+      <div class="spokes">
+        <span style="transform:translate(-50%,-100%) rotate(0deg)"></span>
+        <span style="transform:translate(-50%,-100%) rotate(30deg)"></span>
+        <span style="transform:translate(-50%,-100%) rotate(60deg)"></span>
+        <span style="transform:translate(-50%,-100%) rotate(90deg)"></span>
+        <span style="transform:translate(-50%,-100%) rotate(120deg)"></span>
+        <span style="transform:translate(-50%,-100%) rotate(150deg)"></span>
+        <span style="transform:translate(-50%,-100%) rotate(180deg)"></span>
+        <span style="transform:translate(-50%,-100%) rotate(210deg)"></span>
+        <span style="transform:translate(-50%,-100%) rotate(240deg)"></span>
+        <span style="transform:translate(-50%,-100%) rotate(270deg)"></span>
+        <span style="transform:translate(-50%,-100%) rotate(300deg)"></span>
+        <span style="transform:translate(-50%,-100%) rotate(330deg)"></span>
+      </div>
+
+      <div class="hub"></div>
+    </div>
+
+    <div class="cabins" aria-hidden="true">
+      <div class="cabin" style="transform:translate(-50%,-50%) rotate(0deg) translateY(-42%) rotate(0deg);">
+        <div class="hanger"></div><div class="pod"></div><i class="lamp l1"></i><i class="lamp l2"></i>
+      </div>
+      <div class="cabin" style="transform:translate(-50%,-50%) rotate(30deg) translateY(-42%) rotate(-30deg);">
+        <div class="hanger"></div><div class="pod"></div><i class="lamp l1"></i><i class="lamp l2"></i>
+      </div>
+      <div class="cabin" style="transform:translate(-50%,-50%) rotate(60deg) translateY(-42%) rotate(-60deg);">
+        <div class="hanger"></div><div class="pod"></div><i class="lamp l1"></i><i class="lamp l2"></i>
+      </div>
+      <div class="cabin" style="transform:translate(-50%,-50%) rotate(90deg) translateY(-42%) rotate(-90deg);">
+        <div class="hanger"></div><div class="pod"></div><i class="lamp l1"></i><i class="lamp l2"></i>
+      </div>
+      <div class="cabin" style="transform:translate(-50%,-50%) rotate(120deg) translateY(-42%) rotate(-120deg);">
+        <div class="hanger"></div><div class="pod"></div><i class="lamp l1"></i><i class="lamp l2"></i>
+      </div>
+      <div class="cabin" style="transform:translate(-50%,-50%) rotate(150deg) translateY(-42%) rotate(-150deg);">
+        <div class="hanger"></div><div class="pod"></div><i class="lamp l1"></i><i class="lamp l2"></i>
+      </div>
+      <div class="cabin" style="transform:translate(-50%,-50%) rotate(180deg) translateY(-42%) rotate(-180deg);">
+        <div class="hanger"></div><div class="pod"></div><i class="lamp l1"></i><i class="lamp l2"></i>
+      </div>
+      <div class="cabin" style="transform:translate(-50%,-50%) rotate(210deg) translateY(-42%) rotate(-210deg);">
+        <div class="hanger"></div><div class="pod"></div><i class="lamp l1"></i><i class="lamp l2"></i>
+      </div>
+      <div class="cabin" style="transform:translate(-50%,-50%) rotate(240deg) translateY(-42%) rotate(-240deg);">
+        <div class="hanger"></div><div class="pod"></div><i class="lamp l1"></i><i class="lamp l2"></i>
+      </div>
+      <div class="cabin" style="transform:translate(-50%,-50%) rotate(270deg) translateY(-42%) rotate(-270deg);">
+        <div class="hanger"></div><div class="pod"></div><i class="lamp l1"></i><i class="lamp l2"></i>
+      </div>
+      <div class="cabin" style="transform:translate(-50%,-50%) rotate(300deg) translateY(-42%) rotate(-300deg);">
+        <div class="hanger"></div><div class="pod"></div><i class="lamp l1"></i><i class="lamp l2"></i>
+      </div>
+      <div class="cabin" style="transform:translate(-50%,-50%) rotate(330deg) translateY(-42%) rotate(-330deg);">
+        <div class="hanger"></div><div class="pod"></div><i class="lamp l1"></i><i class="lamp l2"></i>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 花瓣 -->
+<div class="petals" aria-hidden="true"></div>
+<div class="roses" aria-hidden="true"></div>
+
+<!-- 烟花圈 -->
+<div class="fireworks-ring" aria-hidden="true"></div>
+
+<!-- 背景音乐 -->
+<div class="audio">
+  <audio id="bgm" src="audio/bg.mp3" autoplay muted playsinline webkit-playsinline></audio>
+</div>
+
+<!-- 按钮（可选） -->
+<div class="center">
+  <a class="btn-heart" href="pinkheart.html"><span>Click<br>Me</span></a>
+</div>
+
+<script>
+/* ===== 烟花圈：按“pinkheart.html”方式重写 ===== */
+const ring = document.querySelector('.fireworks-ring');
+const ferris = document.querySelector('.ferris');
+let ringTimer = 0;
+
+function rf(min,max){return Math.random()*(max-min)+min}
+function warmColor(){
+  const isWarm=Math.random()<0.65;
+  const h=isWarm?rf(0,50):rf(190,240);
+  return `radial-gradient(circle, #fff 0%, hsla(${h},85%,70%,0.55) 60%, hsla(${h},85%,70%,0) 72%)`;
+}
+
+function spawnRingBurst(){
+  if(!ring || !ferris || document.hidden) return;
+  ring.innerHTML = '';
+
+  const fr = ferris.getBoundingClientRect();
+  const cx = fr.left + fr.width / 2;
+  const cy = fr.top + fr.height / 2;
+  const R = fr.width * 0.44;
+
+  const count = Math.floor(rf(1,6));
+  const used = [];
+  const minSep = 0.8;
+
+  while(used.length < count && used.length < 8){
+    const a = rf(0, Math.PI * 2);
+    if(used.every(t => Math.abs(Math.atan2(Math.sin(a - t), Math.cos(a - t))) > minSep)){
+      used.push(a);
+    }
+  }
+
+  for(let i = 0; i < count; i++){
+    const el = document.createElement('div');
+    el.className = 'fw';
+
+    const size = rf(8,13);
+    el.style.width = size + 'px';
+    el.style.height = size + 'px';
+    el.style.background = warmColor();
+
+    const a = used[i] !== undefined ? used[i] : rf(0, Math.PI * 2);
+    const d = rf(0, R + 57);
+    const x = cx + Math.cos(a) * d;
+    const y = cy + Math.sin(a) * d;
+    const r = size / 2;
+    el.style.left = (x - r) + 'px';
+    el.style.top = (y - r) + 'px';
+
+    const dur = Math.floor(rf(1300,1800));
+    el.style.animation = `explode ${dur}ms linear 1`;
+
+    ring.appendChild(el);
+    el.addEventListener('animationend', ()=> el.remove());
+  }
+}
+
+function startRing(){
+  if(ringTimer || !ring || !ferris) return;
+  spawnRingBurst();
+  ringTimer = setInterval(spawnRingBurst, 1600);
+}
+
+function stopRing(){
+  if(!ringTimer) return;
+  clearInterval(ringTimer);
+  ringTimer = 0;
+  if(ring){ ring.innerHTML = ''; }
+}
+
+document.addEventListener('visibilitychange', function(){
+  if(document.hidden){ stopRing(); }
+  else { startRing(); }
+});
+startRing();
+</script>
+
+<script>
+/* ===== 花瓣飘落：按“跳动的心.html”方式重写 ===== */
+const c=document.querySelector('.petals');
+const rosesLayer = document.querySelector('.roses');
+if(c){ c.innerHTML=''; }
+if(rosesLayer){ rosesLayer.innerHTML=''; }
+let petalLoopTimer = 0;
+
+function r(a,b){return Math.random()*(b-a)+a}
+function bez(p0,p1,p2,p3,t){
+  const it=1-t;
+  const x = it**3*p0.x + 3*it**2*t*p1.x + 3*it*t**2*p2.x + t**3*p3.x;
+  const y = it**3*p0.y + 3*it**2*t*p1.y + 3*it*t**2*p2.y + t**3*p3.y;
+  const dx = 3*it**2*(p1.x-p0.x) + 6*it*t*(p2.x-p1.x) + 3*t**2*(p3.x-p2.x);
+  const dy = 3*it**2*(p1.y-p0.y) + 6*it*t*(p2.y-p1.y) + 3*t**2*(p3.y-p2.y);
+  const ang = Math.atan2(dy, dx);
+  return { x, y, ang };
+}
+function cmToPx(cm){
+  return cm * (96 / 2.54);
+}
+function bloomRose(x, y){
+  if(!rosesLayer) return;
+  const rose = document.createElement('div');
+  rose.className = 'rose';
+  const size = r(44, 64);
+  rose.style.width = size + 'px';
+  rose.style.height = size + 'px';
+  rose.style.left = x + 'px';
+  rose.style.top = y + 'px';
+  const baseRot = r(0,120);
+  rose.style.setProperty('--rose-rot', `${baseRot.toFixed(1)}deg`);
+  rosesLayer.appendChild(rose);
+
+  while(rosesLayer.childElementCount > 36){
+    rosesLayer.firstElementChild.remove();
+  }
+  const bloomMs = 850;
+  const holdMs = 3000;
+  const outMs = 760;
+  setTimeout(function(){ rose.classList.add('leave'); }, bloomMs + holdMs);
+  setTimeout(function(){ rose.remove(); }, bloomMs + holdMs + outMs + 60);
+}
+function spawn(){
+  if(!c || document.hidden) return;
+  if(c.childElementCount>=10) return;
+
+  const gid = 'g'+Math.random().toString(36).slice(2);
+  const wrap = document.createElement('div');
+  wrap.className = 'petal';
+  wrap.style.setProperty('--size', r(0.6,0.95).toFixed(2));
+  wrap.style.setProperty('--blur', r(0.6,1.2).toFixed(2)+'px');
+
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const x0 = r(0.05,0.95)*w;
+  const x1 = x0 + r(-0.25, 0.25)*w;
+  const x2 = x0 + r(-0.45, 0.45)*w;
+  const x3 = x0 + r(-0.60, 0.60)*w;
+  const y0 = -60;
+  const y1 = r(0.25,0.40)*h;
+  const y2 = r(0.60,0.80)*h;
+  const y3 = h + 80;
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox','0 0 60 60');
+  svg.innerHTML = `
+    <defs>
+      <radialGradient id="${gid}" cx="45%" cy="50%" r="70%">
+        <stop offset="0%" stop-color="#ff8a9a"/>
+        <stop offset="50%" stop-color="#e03153"/>
+        <stop offset="100%" stop-color="#b51b3a"/>
+      </radialGradient>
+    </defs>
+    <path d="M18 10
+             C12 8, 6 18, 10 30
+             C12 38, 22 44, 32 42
+             C46 39, 54 30, 50 20
+             C47 13, 36 10, 28 12
+             C24 11, 21 11, 18 10 Z"
+          fill="url(#${gid})"/>
+    <path d="M34 14
+             C39 15, 42 18, 44 22"
+          fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="2" stroke-linecap="round"/>
+    <path d="M28 18
+             C36 20, 40 28, 30 34"
+          fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="6" stroke-linecap="round" opacity="0.6"/>
+  `;
+  wrap.appendChild(svg);
+  c.appendChild(wrap);
+
+  const p0={x:x0,y:y0}, p1={x:x1,y:y1}, p2={x:x2,y:y2}, p3={x:x3,y:y3};
+  const dur = r(20,28)*1000;
+  const sway = r(-10,10);
+  const t0 = performance.now();
+  const bloomY = window.innerHeight - cmToPx(r(2,5));
+  let bloomed = false;
+  function step(now){
+    if(document.hidden){ wrap.remove(); return; }
+    const t = Math.min(1, (now - t0) / dur);
+    const {x,y,ang} = bez(p0,p1,p2,p3,t);
+    const fade = t<0.08 ? t/0.08 : (t>0.92 ? (1-(t-0.92)/0.08) : 1);
+    wrap.style.opacity = String(fade);
+    wrap.style.transform = `translate(${x}px, ${y}px) rotate(${(ang*180/Math.PI)+sway*Math.sin(t*6)}deg)`;
+    if(!bloomed && y >= bloomY){
+      bloomRose(x, y);
+      wrap.style.transition = 'opacity 420ms ease';
+      wrap.style.opacity = '0';
+      setTimeout(function(){ wrap.remove(); }, 440);
+      bloomed = true;
+      return;
+    }
+    if(t<1){ requestAnimationFrame(step); } else { wrap.remove(); }
+  }
+  requestAnimationFrame(step);
+}
+
+function spawnPetalBatch(){
+  if(!c || document.hidden) return;
+  const existing = c.childElementCount;
+  const batch = Math.min(Math.floor(r(2,4)), Math.max(0, 10 - existing));
+  for(let i=0;i<batch;i++){ spawn(); }
+}
+
+function startPetals(){
+  if(petalLoopTimer || !c) return;
+  const loop = function(){
+    spawnPetalBatch();
+    petalLoopTimer = window.setTimeout(loop, 3000);
+  };
+  loop();
+}
+
+function stopPetals(){
+  if(!petalLoopTimer) return;
+  clearTimeout(petalLoopTimer);
+  petalLoopTimer = 0;
+  if(c){ c.innerHTML = ''; }
+}
+
+document.addEventListener('visibilitychange', function(){
+  if(document.hidden){ stopPetals(); }
+  else { startPetals(); }
+});
+startPetals();
+</script>
+
+<script>
+/* ===== 背景音乐：页面打开即自动播放（无按钮） ===== */
+document.addEventListener('DOMContentLoaded', function(){
+  const bgm = document.getElementById('bgm');
+  if(!bgm) return;
+
+  bgm.loop = true;
+  bgm.preload = 'auto';
+  bgm.autoplay = true;
+  bgm.playsInline = true;
+  bgm.setAttribute('playsinline', '');
+  bgm.setAttribute('webkit-playsinline', '');
+
+  function unmuteWithFade(){
+    bgm.muted = false;
+    let v = 0;
+    bgm.volume = v;
+    function fade(){
+      if(bgm.paused) return;
+      v = Math.min(0.85, v + 0.05);
+      bgm.volume = v;
+      if(v < 0.85){ setTimeout(fade, 120); }
+    }
+    fade();
+  }
+
+  function tryAutoPlay(){
+    bgm.play().then(function(){
+      unmuteWithFade();
+    }).catch(function(){});
+  }
+
+  tryAutoPlay();
+
+  let retries = 0;
+  const retryTimer = setInterval(function(){
+    if(!bgm.paused || retries >= 20){
+      clearInterval(retryTimer);
+      return;
+    }
+    retries += 1;
+    tryAutoPlay();
+  }, 500);
+
+  window.addEventListener('pageshow', function(){
+    if(bgm.paused){ tryAutoPlay(); }
+  }, { passive: true });
+
+  window.addEventListener('focus', function(){
+    if(bgm.paused){ tryAutoPlay(); }
+  }, { passive: true });
+
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden && bgm.paused){ tryAutoPlay(); }
+  });
+});
+</script>
+
+</body>
+</html>
